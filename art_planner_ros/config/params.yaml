@@ -1,0 +1,67 @@
+planner:  
+    name: "lazy_prm_star_min_update"                # Planner [rrt_star, inf_rrt_star, rrt_sharp, lazy_prm_star, lazy_prm_star_min_update]
+    elevation_layer: "elevation"                  # Layer name which has elevation information.
+    traversability_layer: "traversability"          # Layer name which has traversability information.
+    plan_time: 0.01                                 # [s]   Planning duration.
+    n_threads: 4                                    # Number of threads for ROS spinner.
+    replan_freq: 1.0                                # [Hz]    Frequency of replanning.
+    traversability_thres: 0.5                       # Traversability smaller than this is considered untraversable.
+    simplify_solution: true                         # Simplify the solution path before publishing.
+    snap_goal_to_map: true                          # Get z, roll, pitch from elevation map.
+    unknown_space_untraversable: true               # If set true, unknown space is assumed to be untraversable.
+    start_goal_search:
+        start_radius: 0.2                           # [m] Try to find a valid start pose in this radius if selected start is invalid.
+        goal_radius: 0.5                            # [m] Try to find a valid goal pose in this radius if selected pose is invalid.
+        n_iter: 1000                                # Sample n times to find a valid pose.
+    lazy_prm_star_min_update:
+        invalidate_updated_graph_components: true   # Invalidate planner graph vertices and edges which were recently observed (and therefore might have changed).
+        height_change_for_update: 0.05              # [m] Cell height changes larger than this are considered updated.
+        cleanup_when_not_planning: true             # Do validity check in separate thread while not planning.
+
+objectives:
+    custom_path_length:
+        use_directional_cost: true                  # Enable different cost per direction.
+        max_lon_vel: 0.5                            # [m/s]   Maximal longitudinal velocity.
+        max_lat_vel: 0.1                            # [m/s]   Maximal lateral velocitiy.
+        max_ang_vel: 0.5                            # [rad/s] Maximal angular velocity.
+
+    clearance:      
+        enable: false                               # Enable clearance objective.
+        weight: 10.0                                # Weight of this cost compared to path length.
+        cost_center: 5                              # Cost if center box of reachability is not in contact.
+        cost_lon: 3                                 # Cost if longitudinal box of reachability is not in contact.
+        cost_lat: 2                                 # Cost if lateral box of reachability is not in contact.
+        cost_diag: 1                                # Cost if diagional box of reachability is not in contact.
+
+sampler:        
+    max_pitch_pert: 10                              # [degree]  Maximum pitch pertubation when sampling.
+    max_roll_pert: 3.33                             # [degree]  Maximum roll pertubation when sampling.
+    sample_from_distribution: true                  # Whether to use our custom sampling distribution or sample uniformly in the map.
+    use_inverse_vertex_density: true                # Only works with "lazy_prm_star_min_update". Sampling biased towards regions with low-density of graph vertices.
+    use_max_prob_unknown_samples: true              # Limit drawing samples from unknown map region to certain probability.
+    max_prob_unknown_samples: 0.1                   # The maximum probability of drawing samples from the unknown region.
+
+robot:      
+    base_frame: "base"                              # Frame ID which is used to get robot pose.
+    torso:
+        length: 1.07                                # [m] Length.
+        width: 0.55                                 # [m] Width.
+        height: 0.3                                 # [m] Height.
+        offset:                                     # [m] Torso center offset relative to base_frame.
+            x: 0.0
+            y: 0.0
+            z: 0.04
+    feet:
+        offset:                                     # [m] Reachability box offset relative to base_frame.
+            x: 0.362                                # Sign of value does not matter.
+            y: 0.225                                # Sign of value does not matter.
+            z: -0.525
+        reach:                                      # [m] Reachability of foot box size.
+            x: 0.4
+            y: 0.3
+            z: 0.15
+
+path_following:
+    local_guidance_mode: walk                       # Path following mode for local guidance.
+
+verbose: true

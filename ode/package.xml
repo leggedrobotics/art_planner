@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<package format="2">
+  <!--Package Header-->
+  <name>ODE</name>
+  <version>0.16.1</version>
+  <description>ODE catkin.</description>
+  <license>Proprietary</license>
+  <maintainer email="lorenwel@ethz.ch">Lorenz Wellhausen</maintainer>
+  <!--Package Dependencies-->
+  <buildtool_depend>cmake</buildtool_depend>
+  <exec_depend>catkin</exec_depend>
+  <depend>opengl</depend>
+  <!--Package Export-->
+  <export>
+    <build_type>cmake</build_type>
+  </export>
+</package>

@@ -1,0 +1,7 @@
+#!/bin/sh
+libtoolize
+aclocal
+autoconf
+autoheader
+automake -a
+(echo "Running ./bootstrap in dependencies/AntTweakBar" && cd deps/AntTweakBar && ./bootstrap)

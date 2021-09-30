@@ -1,0 +1,18 @@
+# Define the goal
+geometry_msgs/PoseStamped goal
+---
+# Define the result
+---
+# Define a feedback message
+uint8 INVALID_START = 0   # Start pose is invalid
+uint8 INVALID_GOAL = 1    # Goal pose is invalid
+uint8 PLANNING = 2        # Planning to goal
+uint8 FOUND_SOLUTION = 3  # Found a solution path
+uint8 NO_SOLUTION = 4     # Failed to find a path
+uint8 NO_GOAL_TF = 5      # No TF found to transform goal pose to map frame.
+uint8 GOAL_RECEIVED = 6   # Received goal pose.
+uint8 NODE_SHUTDOWN = 7   # Node is shut down.
+uint8 NO_MAP = 8          # Map is not set.
+uint8 NO_ROBOT_TF = 9     # Could not get robot pose from TF.
+
+uint8 status

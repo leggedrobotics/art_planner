@@ -1,0 +1,8 @@
+This is a simple tool to test pairs of ODE geoms.
+
+It uses AntTweakBar for the GUI.
+
+Dependencies are currently GLFW, but other backends (SDL, GLUT, etc)
+can be easily implemented, that part of the code is only used to open
+a windows and get mouse and keyboard events.
+

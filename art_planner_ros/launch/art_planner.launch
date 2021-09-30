@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<launch>
+  
+  <node name="art_planner" pkg="art_planner_ros" type="art_planner_ros_node" output="screen" >
+
+    <remap from="~elevation_map" to="/elevation_mapping/elevation_map_raw"/>
+    <remap from="~path_following/goal" to="/local_guidance_path_manager/follow_global_path/goal"/>
+    <remap from="~path_following/result" to="/local_guidance_path_manager/follow_global_path/result"/>
+
+    <rosparam command="load" file="$(find art_planner_ros)/config/params.yaml"/>
+
+  </node>
+
+  <node name="art_planner_plan_to_goal_client" pkg="art_planner_ros" type="plan_to_goal_client.py" output="screen" />
+
+</launch>

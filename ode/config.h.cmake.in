@@ -1,0 +1,109 @@
+#ifndef ODE_CONFIG_H
+#define ODE_CONFIG_H
+
+/* Define to 1 if you have <alloca.h> and it should be used (not on Ultrix). */
+#cmakedefine HAVE_ALLOCA_H 1
+
+/* Use the Apple OpenGL framework. */
+#cmakedefine HAVE_APPLE_OPENGL_FRAMEWORK 1
+
+/* Define to 1 if you have the `gettimeofday' function. */
+#cmakedefine HAVE_GETTIMEOFDAY 1
+
+/* Define to 1 if you have the <inttypes.h> header file. */
+#cmakedefine HAVE_INTTYPES_H 1
+
+/* Define to 1 if you have the `isnan' function. */
+#cmakedefine HAVE_ISNAN 1
+
+/* Define to 1 if you have the `isnanf' function. */
+#cmakedefine HAVE_ISNANF 1
+
+/* Define to 1 if you have the <malloc.h> header file. */
+#cmakedefine HAVE_MALLOC_H 1
+
+/* Define to 1 if you have the `pthread_attr_setstacklazy' function. */
+#cmakedefine HAVE_PTHREAD_ATTR_SETSTACKLAZY 1
+
+/* Define to 1 if you have the `pthread_condattr_setclock' function. */
+#cmakedefine HAVE_PTHREAD_CONDATTR_SETCLOCK 1
+
+/* Define to 1 if you have the <stdint.h> header file. */
+#cmakedefine HAVE_STDINT_H 1
+
+/* Define to 1 if you have the <sys/time.h> header file. */
+#cmakedefine HAVE_SYS_TIME_H 1
+
+/* Define to 1 if you have the <sys/types.h> header file. */
+#cmakedefine HAVE_SYS_TYPES_H 1
+
+/* Define to 1 if you have the <unistd.h> header file. */
+#cmakedefine HAVE_UNISTD_H 1
+
+/* Define to 1 if you have the `_isnan' function. */
+#cmakedefine HAVE__ISNAN 1
+
+/* Define to 1 if you have the `_isnanf' function. */
+#cmakedefine HAVE__ISNANF 1
+
+/* Define to 1 if you have the `__isnan' function. */
+#cmakedefine HAVE___ISNAN 1
+
+/* Define to 1 if you have the `__isnanf' function. */
+#cmakedefine HAVE___ISNANF 1
+
+/* compiling for a pentium on a gcc-based platform? */
+#cmakedefine PENTIUM 1
+
+/* compiling for a X86_64 system on a gcc-based platform? */
+#cmakedefine X86_64_SYSTEM 1
+
+/* Try to identify the platform */
+#if defined(_XENON)
+#define ODE_PLATFORM_XBOX360
+#elif defined(SN_TARGET_PSP_HW)
+#define ODE_PLATFORM_PSP
+#elif defined(SN_TARGET_PS3)
+#define ODE_PLATFORM_PS3
+#elif defined(_MSC_VER) || defined(__CYGWIN32__) || defined(__MINGW32__)
+#define ODE_PLATFORM_WINDOWS
+#elif defined(__linux__)
+#define ODE_PLATFORM_LINUX
+#elif defined(__APPLE__) && defined(__MACH__)
+#define ODE_PLATFORM_OSX
+#else
+#error "Need some help identifying the platform!"
+#endif
+
+/* Additional platform defines used in the code */
+#if defined(ODE_PLATFORM_WINDOWS) && !defined(WIN32)
+#define WIN32
+#endif
+
+#if defined(__CYGWIN32__) || defined(__MINGW32__)
+#define CYGWIN
+#endif
+
+#if defined(ODE_PLATFORM_OSX)
+#define macintosh
+#endif
+
+#ifdef HAVE_ALLOCA_H
+#include <alloca.h>
+#endif
+
+#ifdef HAVE_MALLOC_H
+#include <malloc.h>
+#endif
+
+#ifdef HAVE_STDINT_H
+#include <stdint.h>
+#endif
+
+#ifdef HAVE_INTTYPES_H
+#include <inttypes.h>
+#endif
+
+#include "typedefs.h"
+
+#endif // ODE_CONFIG_H

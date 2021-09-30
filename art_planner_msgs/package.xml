@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>art_planner_msgs</name>
+  <version>0.0.0</version>
+  <description>The art_planner_msgs package</description>
+
+  <maintainer email="lorenwel@ethz.ch">Lorenz Wellhausen</maintainer>
+
+  <license>TODO</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+  <depend>actionlib_msgs</depend>
+  <depend>geometry_msgs</depend>
+
+
+  <export>
+
+  </export>
+</package>
