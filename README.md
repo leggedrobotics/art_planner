@@ -9,6 +9,17 @@ More detailed instructions still to come.
 
 ©2021 ETH Zurich
 
+If you use this work in an academic context, please cite:
+
+```
+@inproceedings{wellhausen2021rough,
+  title={Rough Terrain Navigation for Legged Robots using Reachability Planning and Template Learning},
+  author={Wellhausen, Lorenz and Hutter, Marco},
+  booktitle={2021 IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS 2021)},
+  year={2021}
+}
+```
+
 ## Build
 [![Build Status](https://ci.leggedrobotics.com/buildStatus/icon?job=bitbucket_leggedrobotics/art_planner/master)](https://ci.leggedrobotics.com/job/bitbucket_leggedrobotics/job/art_planner/job/master/)
 
