@@ -3,6 +3,8 @@
 Sampling based path planning for ANYmal, based on 2.5D height maps.
 More detailed instructions still to come.
 
+The paper detailing this work is available on the [ETH Research Collection](https://www.research-collection.ethz.ch/bitstream/handle/20.500.11850/507668/1/2021_iros_wellhausen_planner_final_version.pdf).
+
 **Author:** Lorenz Wellhausen
 
 **Maintainer:** Lorenz Wellhausen, [lorenwel@ethz.ch](lorenwel@ethz.ch)
