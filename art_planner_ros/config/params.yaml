@@ -70,7 +70,4 @@ robot:
             y: 0.2
             z: 0.2
 
-path_following:
-    maximum_lookahead: 0.0                          # [m] How far ahead to search when trying to short-cut path. Only active when > 0.0 .
-
 verbose: true

@@ -118,10 +118,6 @@ struct Params {
 
   } robot;
 
-  struct {
-    double             maximum_lookahead{0.0};
-  } path_following;
-
   bool verbose{false};
 
 };

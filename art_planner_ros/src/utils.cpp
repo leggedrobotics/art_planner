@@ -273,13 +273,6 @@ ParamsPtr art_planner::loadRosParameters(const ros::NodeHandle& nh) {
                                  "robot/feet/reach/z",
                                  params->robot.feet.reach.z);
 
-  // Path following.
-
-  params->path_following.maximum_lookahead =
-      getParamWithDefaultWarning(nh,
-                                 "path_following/maximum_lookahead",
-                                 params->path_following.maximum_lookahead);
-
   params->verbose = getParamWithDefaultWarning(nh, "verbose", false);
 
   return params;
