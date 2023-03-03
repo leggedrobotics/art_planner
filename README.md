@@ -95,6 +95,15 @@ The defaults should be fine for ANYmal C.
 
 You can use the `2D Nav Goal` in RViz to set a goal pose for the planner.
 
+#### **Planning Method**
+
+By default, `prm_motion_cost` is used as planning method. This uses a learned motion cost as planning objective, as described in `wellhausen2023artplanner`.
+The included neural network weights for computing the motion cost are trained for blind and perceptive policies of the ANYmal robot.
+Unforunately, we cannot provide the environment for you to retrain it for your robot.
+Therefore, if you want to try this planner on a robot with very different traversability characteristics than ANYmal, you might be better off using the purely geometric `lazy_prm_star_min_update` method, as described in `wellhausen2021rough`.
+
+
+
 ### Height Map
 
 We recommend using the [elevation_mapping_cupy](https://github.com/leggedrobotics/elevation_mapping_cupy) package for height mapping.
@@ -135,4 +144,4 @@ Although the planner is overall pretty :fire::fire::fire::100::fire::fire::fire:
 ### Known issues (PRs welcome!)
 
 - Catkinized ODE version might be pulled in as dependency by other packages in workspace :bowling:
-- This method does not use LLMs or RL, so your friends might not think you're cool for using it :older_man:
+- This method does not use LLMs or RL, so using it basically makes you a boomer :older_man:
