@@ -43,7 +43,7 @@ The base package has the following dependencies:
 
 - [OMPL \[v1.4.2\]](https://github.com/ompl/ompl)
 - [OpenCV](https://github.com/opencv/opencv)
-- [grid\_map\_core](git@github.com:ANYbotics/grid_map.git)
+- [grid\_map\_core](https://github.com/ANYbotics/grid_map)
 
 You can install them from source if you want to use the planner independent of ROS.
 If you're using the ROS interface, installation is even easier and can be done through PPA (and OpenCV should be installed by default).
