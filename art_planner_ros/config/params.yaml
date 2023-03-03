@@ -42,7 +42,8 @@ objectives:                                         # Not active with prm_motion
         max_lat_vel: 0.1                            # [m/s]   Maximal lateral velocitiy.
         max_ang_vel: 0.5                            # [rad/s] Maximal angular velocity.
 
-sampler:        
+sampler:
+    align_torso_with_terrain: false                 # Align sampled pose with terrain normal.
     max_pitch_pert: 10                              # [degree]  Maximum pitch pertubation when sampling.
     max_roll_pert: 3.33                             # [degree]  Maximum roll pertubation when sampling.
     sample_from_distribution: true                  # Whether to use our custom sampling distribution or sample uniformly in the map.
@@ -61,11 +62,12 @@ robot:
             y: 0.0
             z: 0.04
     feet:
+        plane_symmetries: ["sagittal","coronal"]    # Body planes on which to mirror reachability box. Options: 'sagittal' - left/right, 'coronal' - front/back.
         offset:                                     # [m] Reachability box offset relative to base_frame.
-            x: 0.51                                # Sign of value does not matter.
-            y: 0.2                                # Sign of value does not matter.
+            x: 0.51
+            y: 0.2
             z: -0.475
-        reach:                                      # [m] Reachability of foot box size.
+        reach:                                      # [m] Reachability of foot (box size).
             x: 0.2
             y: 0.2
             z: 0.2

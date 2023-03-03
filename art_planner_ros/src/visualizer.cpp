@@ -257,13 +257,34 @@ void Visualizer::visualizeCollisionBoxes() {
   marker.color.b = 0;
   marker.pose.position.z = params_->robot.feet.offset.z;
 
-  for (unsigned int i = 0; i < 4; ++i) {
-    marker.pose.position.x = i < 2 ? params_->robot.feet.offset.x : -params_->robot.feet.offset.x;
-    marker.pose.position.y = i % 2 ? params_->robot.feet.offset.y : -params_->robot.feet.offset.y;
+  // Add foot markers to separate vector first so we can iterate over them.
+  std::vector<visualization_msgs::Marker> feet_markers;
+  marker.pose.position.x = params_->robot.feet.offset.x;
+  marker.pose.position.y = params_->robot.feet.offset.y;
+  feet_markers.push_back(marker);
+  ++marker.id;
 
-    array.markers.push_back(marker);
-    ++marker.id;
+  for (const auto& plane: params_->robot.feet.plane_symmetries) {
+    size_t n_boxes = feet_markers.size();
+    if (plane == "sagittal") {
+      // Need to iterate like this because we alter vector size during loop.
+      for (size_t i = 0; i < n_boxes; ++i) {
+        feet_markers.push_back(feet_markers[i]);
+        feet_markers.back().pose.position.y *= -1;
+        feet_markers.back().id = marker.id++;
+      }
+    } else if (plane == "coronal") {
+      // Need to iterate like this because we alter vector size during loop.
+      for (size_t i = 0; i < n_boxes; ++i) {
+        feet_markers.push_back(feet_markers[i]);
+        feet_markers.back().pose.position.x *= -1;
+        feet_markers.back().id = marker.id++;
+      }
+    }
   }
+
+  // Add foot markers to output array.
+  array.markers.insert(array.markers.end(), feet_markers.begin(), feet_markers.end());
 
   collision_pub_thread_ = std::thread(std::bind(&Visualizer::visualizeCollisionBoxesThread,
                                                 this,
