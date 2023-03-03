@@ -9,21 +9,8 @@ using namespace art_planner;
 
 
 Visualizer::Visualizer(const ros::NodeHandle& nh, const ParamsConstPtr &params) : nh_(nh), params_(params) {
-  graph_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("graph", 1, true);
   collision_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("collision_boxes", 1);
   path_collision_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("path_collisions", 1, true);
-
-  // Remove old markers.
-  visualization_msgs::Marker marker;
-  visualization_msgs::MarkerArray array;
-  marker.action = visualization_msgs::Marker::DELETEALL;
-  marker.ns = "vertices";
-  array.markers.push_back(marker);
-  marker.ns = "edges";
-  array.markers.push_back(marker);
-  marker.ns = "start_goal";
-  array.markers.push_back(marker);
-  graph_pub_.publish(array);
 
   visualizeCollisionBoxes();
 }
@@ -34,6 +21,26 @@ Visualizer::~Visualizer() {
   if (collision_pub_thread_.joinable()) {
     collision_pub_thread_.join();
   }
+}
+
+
+
+ros::Publisher& Visualizer::getGraphPublisher(const std::string& ns_prefix) {
+  if (graph_pub_.find(ns_prefix) == graph_pub_.end()) {
+    graph_pub_[ns_prefix] = nh_.advertise<visualization_msgs::MarkerArray>(ns_prefix + "graph", 1, true);
+    // Remove old markers.
+    visualization_msgs::Marker marker;
+    visualization_msgs::MarkerArray array;
+    marker.action = visualization_msgs::Marker::DELETEALL;
+    marker.ns = "vertices";
+    array.markers.push_back(marker);
+    marker.ns = "edges";
+    array.markers.push_back(marker);
+    marker.ns = "start_goal";
+    array.markers.push_back(marker);
+    graph_pub_[ns_prefix].publish(array);
+  }
+  return graph_pub_[ns_prefix];
 }
 
 
@@ -74,10 +81,10 @@ void Visualizer::addVertices(const ompl::base::PlannerData& dat,
   const auto n_vertices = dat.numVertices();
   for (size_t i = 0; i < n_vertices; ++i) {
     if (i == last_num_vertices) {
-      marker.color.r = 0.0f;
-      marker.color.b = 0.8f;
-      marker.scale.x = 0.2;
-      marker.scale.y = 0.1;
+//      marker.color.r = 0.0f;
+//      marker.color.b = 0.8f;
+//      marker.scale.x = 0.2;
+//      marker.scale.y = 0.1;
     }
 
     const auto cur_vert = dat.getVertex(i);
@@ -104,14 +111,14 @@ void Visualizer::addEdges(const ompl::base::PlannerData& dat,
   marker.ns = "edges";
   marker.action = visualization_msgs::Marker::MODIFY;
   marker.id = 0;
-  marker.type = visualization_msgs::Marker::LINE_STRIP;
+  marker.type = visualization_msgs::Marker::LINE_LIST;
   marker.scale.x = 0.01;
   marker.scale.y = 0;
   marker.scale.z = 0;
   marker.color.r = 0;
   marker.color.g = 0;
   marker.color.b = 0.8f;
-  marker.points.resize(2);
+  marker.points.resize(2*dat.numEdges());
   marker.pose.position.x = 0;
   marker.pose.position.y = 0;
   marker.pose.position.z = 0;
@@ -121,24 +128,19 @@ void Visualizer::addEdges(const ompl::base::PlannerData& dat,
   marker.pose.orientation.z = 0;
   std::vector<unsigned int> edges;
   const auto n_vertices = dat.numVertices();
+  size_t k = 0;
   for (size_t i = 0; i < n_vertices; ++i) {
     const auto cur_vert = dat.getVertex(i);
-    setMarkerPointFromState(cur_vert.getState(), marker.points[0]);
     dat.getIncomingEdges(i, edges);
+    const auto cur_state= cur_vert.getState();
     for (const auto& j: edges) {
+      setMarkerPointFromState(cur_state, marker.points[k++]);
       const auto other_vert = dat.getVertex(j);
-      setMarkerPointFromState(other_vert.getState(), marker.points[1]);
-      array.markers.push_back(marker);
-      ++marker.id;
+      setMarkerPointFromState(other_vert.getState(), marker.points[k++]);
     }
   }
+  array.markers.push_back(marker);
 
-  const int n_markers = marker.id;
-  marker.action = visualization_msgs::Marker::DELETE;
-  while (marker.id++ < last_num_edges) {
-    array.markers.push_back(marker);
-  }
-  last_num_edges = n_markers;
 }
 
 
@@ -179,9 +181,11 @@ void Visualizer::addStartGoal(const ompl::base::PlannerData& dat,
 
 
 void Visualizer::visualizePlannerGraph(const ompl::base::PlannerData& dat,
-                                       const std::string& frame_id) {
+                                       const std::string& frame_id,
+                                       const std::string& ns_prefix) {
   // Do nothing if no one's watching.
-  if (graph_pub_.getNumSubscribers() == 0) return;
+  auto& graph_pub = getGraphPublisher(ns_prefix);
+  if (graph_pub.getNumSubscribers() == 0) return;
 
   visualization_msgs::MarkerArray array;
 
@@ -198,7 +202,7 @@ void Visualizer::visualizePlannerGraph(const ompl::base::PlannerData& dat,
     marker.color.a = 1.0;
   }
 
-  graph_pub_.publish(array);
+  graph_pub.publish(array);
 }
 
 

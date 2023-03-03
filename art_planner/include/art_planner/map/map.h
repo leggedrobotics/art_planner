@@ -149,6 +149,8 @@ public:
     map_pre_processor_ = chain;
   }
 
+  void reApplyPreprocessing();
+
   void setOldMapProcessorChain(const processors::ChainOldMap& chain) {
     std::lock_guard<std::mutex> lock(mutex_);
     old_map_post_processor_ = chain;

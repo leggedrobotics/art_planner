@@ -1,0 +1,2 @@
+map_layer:    'elevation'
+model_file:   'rsc/model/grid-1998-blind-light-2.pt'  # Relative to ROS package path.

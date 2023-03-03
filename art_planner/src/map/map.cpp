@@ -88,3 +88,9 @@ void Map::get3DPoseFrom2D(double* xyzrpy) const {
   xyzrpy[3] = -atan2(normal_b.y(), normal_b.z()); // Roll.
   xyzrpy[4] = atan2(normal_b.x(), normal_b.z()); // Pitch.
 }
+
+
+
+void Map::reApplyPreprocessing() {
+  map_pre_processor_.process(map_);
+}

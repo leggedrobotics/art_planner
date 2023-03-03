@@ -21,7 +21,20 @@ grid_map::Matrix art_planner::inpaintMatrix(const grid_map::Matrix& mat) {
   const auto min = mat.minCoeffOfFinites();
   const auto max = mat.maxCoeffOfFinites();
 
-  const auto mask = (mat_cv!=mat_cv);
+//  const cv::Mat mask = (mat_cv!=mat_cv);
+  // The expression above is buggy as of August 23, 2021. This is a workaround.
+  cv::Mat mat1 = mat_cv.clone();
+  cv::Mat mat2 = mat_cv.clone();
+  cv::patchNaNs(mat1, 128);
+  cv::patchNaNs(mat2, 200);
+  cv::Mat mask = mat1 == 128 & mat2 == 200;
+  // End of workaround.
+
+  Eigen::Map<Eigen::Matrix<grid_map::Matrix::Scalar,
+                           Eigen::Dynamic,
+                           Eigen::Dynamic> > mat_test(reinterpret_cast<grid_map::Matrix::Scalar*>(mat_cv.data),
+                                                           mat.rows(),
+                                                           mat.cols());
 
 //  mat_cv = (mat_cv-min)/(max-min)*255;
 
@@ -124,6 +137,29 @@ grid_map::Matrix art_planner::dilateAndErodeMatrix(const grid_map::Matrix& mat, 
                            Eigen::Dynamic> > mat_filtered(reinterpret_cast<grid_map::Matrix::Scalar*>(mat_cv_filtered.data),
                                                           mat.rows(),
                                                           mat.cols());
+
+  return mat_filtered;
+}
+
+
+
+grid_map::Matrix art_planner::erodeAndDilateMatrix(const grid_map::Matrix& mat, int size) {
+  cv::Mat mat_cv(mat.cols(),
+                 mat.rows(),
+                 cv::DataType<grid_map::Matrix::Scalar>::type,
+                 const_cast<void*>(static_cast<const void*>(mat.data())));
+
+  cv::Mat kernel = getCircularKernel(size);
+  cv::Mat mat_cv_filtered;
+
+  cv::erode(mat_cv, mat_cv_filtered, kernel);
+  cv::dilate(mat_cv_filtered, mat_cv_filtered, kernel);
+
+  Eigen::Map<Eigen::Matrix<grid_map::Matrix::Scalar,
+      Eigen::Dynamic,
+      Eigen::Dynamic> > mat_filtered(reinterpret_cast<grid_map::Matrix::Scalar*>(mat_cv_filtered.data),
+                                     mat.rows(),
+                                     mat.cols());
 
   return mat_filtered;
 }

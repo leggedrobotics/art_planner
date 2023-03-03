@@ -53,24 +53,64 @@ void Basic::setMaskedElevationAndTraversability(const GridMapPtr& map) {
                                                      grid_map::Matrix::Zero(size.x(), size.y()));
   }
 
+  // Compute safety features.
+  const auto mapsize = map->getSize();
+  grid_map::Matrix trav_filter =
+      (map->get(params_->planner.traversability_layer).array() > params_->planner.traversability_thres).select(Eigen::MatrixXf::Ones(mapsize.x(), mapsize.y()),
+                                                                                                               Eigen::MatrixXf::Zero(mapsize.x(), mapsize.y()));
+
+  map->add("traversability_thresholded_no_safety", trav_filter);
+
+  // Removes "safe" patches which are smaller in diameter than foothold_size.
+  const auto foothold_size = std::ceil(params_->planner.safety.foothold_size / map->getResolution());
+//  grid_map::Matrix trav_filter_saftey = erodeAndDilateMatrix(trav_filter, foothold_size);
+//  trav_filter = (trav_filter.array() < 0.5f).select(trav_filter, trav_filter_saftey);  // Make sure we don't validate unsafe things.
+
+  // Erodes traversable edges, unless they are on a small hole, without large elevation change.
+  const auto safety_margin = std::ceil(2 * params_->planner.safety.foothold_margin / map->getResolution());
+  const auto hole_size = std::floor(params_->planner.safety.foothold_margin_max_hole_size / map->getResolution());
+  grid_map::Matrix trav_filter_saftey = dilateAndErodeMatrix(trav_filter, hole_size);  // Close holes.
+
+  // Compute height difference.
+  const grid_map::Matrix elevation = map->get(params_->planner.elevation_layer);
+  const auto safety_search_radius = std::ceil(2 * params_->planner.safety.foothold_margin_max_drop_search_radius / map->getResolution());
+  const grid_map::Matrix diff_low = elevation - erodeMatrix(elevation, safety_search_radius);
+  const auto hole_mask = diff_low.array() > params_->planner.safety.foothold_margin_max_drop;
+  trav_filter_saftey = (hole_mask).select(trav_filter, trav_filter_saftey);  // Make sure we don't validate unsafe things.
+  map->add("diff_low_mask", (hole_mask).select(Eigen::MatrixXf::Ones(mapsize.x(), mapsize.y()),
+                                               Eigen::MatrixXf::Zero(mapsize.x(), mapsize.y())));
+
+  // Don't erode if we have walls, which means stepping close to them is safe.
+  const grid_map::Matrix diff_high = dilateMatrix(elevation, safety_margin) - elevation;
+  const auto wall_mask = (diff_high.array() > params_->planner.safety.foothold_margin_min_step /*&& !hole_mask*/);
+  trav_filter_saftey = (wall_mask).select(Eigen::MatrixXf::Ones(mapsize.x(), mapsize.y()), trav_filter_saftey);  // Make sure we don't validate unsafe things.
+  map->add("diff_high_mask", (wall_mask).select(Eigen::MatrixXf::Ones(mapsize.x(), mapsize.y()),
+                                                Eigen::MatrixXf::Zero(mapsize.x(), mapsize.y())));
+
+
+  trav_filter_saftey = erodeMatrix(trav_filter_saftey, safety_margin);  // Erode.
+  // Make sure we don't validate unsafe things and remove erosion along walls.
+  trav_filter_saftey = (trav_filter.array() < 0.5f || wall_mask).select(trav_filter, trav_filter_saftey);
+
+  // Finally, remove any new small valid patches.
+  trav_filter_saftey = erodeAndDilateMatrix(trav_filter_saftey, foothold_size);
+  trav_filter_saftey = (trav_filter.array() < 0.5f).select(trav_filter, trav_filter_saftey);  // Make sure we don't validate unsafe things.
+
+  map->add("traversability_thresholded", trav_filter_saftey);
+
   // Set untraversable region very low, so that feet are never in collision.
   map->add("elevation_masked", -std::numeric_limits<float>::infinity());
   map->get("elevation_masked") =
-      (map->get(params_->planner.traversability_layer).array()
-       > params_->planner.traversability_thres).select(map->get(params_->planner.elevation_layer),
-                                                       map->get("elevation_masked"));
+      (trav_filter_saftey.array() > 0.5).select(map->get(params_->planner.elevation_layer),
+                                                         map->get("elevation_masked"));
 }
 
 
 
 void Basic::setTraversabilityFilter(const GridMapPtr& map) {
   // Compute traversability sampling mask.
-  const auto mapsize = map->getSize();
-  grid_map::Matrix trav_filter =
-      (map->get(params_->planner.traversability_layer).array() > params_->planner.traversability_thres).select(Eigen::MatrixXf::Ones(mapsize.x(), mapsize.y()),
-                                                                                                                     Eigen::MatrixXf::Zero(mapsize.x(), mapsize.y()));
 
-  map->add("traversability_thresholded", trav_filter);
+  auto trav_filter = map->get("traversability_thresholded");
 
   // We can step over small untraversable obstacles, so remove them.
   const double total_reach = std::sqrt(params_->robot.feet.reach.x*params_->robot.feet.reach.x +

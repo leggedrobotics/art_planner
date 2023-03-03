@@ -52,6 +52,33 @@ ParamsPtr art_planner::loadRosParameters(const ros::NodeHandle& nh) {
                                  "planner/unknown_space_untraversable",
                                  params->planner.unknown_space_untraversable);
 
+  // Planner / Safety
+
+  params->planner.safety.foothold_margin =
+      getParamWithDefaultWarning(nh,
+                                 "planner/safety/foothold_margin",
+                                 params->planner.safety.foothold_margin);
+  params->planner.safety.foothold_margin_max_hole_size =
+      getParamWithDefaultWarning(nh,
+                                 "planner/safety/foothold_margin_max_hole_size",
+                                 params->planner.safety.foothold_margin_max_hole_size);
+  params->planner.safety.foothold_margin_max_drop =
+      getParamWithDefaultWarning(nh,
+                                 "planner/safety/foothold_margin_max_drop",
+                                 params->planner.safety.foothold_margin_max_drop);
+  params->planner.safety.foothold_margin_max_drop_search_radius =
+      getParamWithDefaultWarning(nh,
+                                 "planner/safety/foothold_margin_max_drop_search_radius",
+                                 params->planner.safety.foothold_margin_max_drop_search_radius);
+  params->planner.safety.foothold_margin_min_step =
+      getParamWithDefaultWarning(nh,
+                                 "planner/safety/foothold_margin_min_step",
+                                 params->planner.safety.foothold_margin_min_step);
+  params->planner.safety.foothold_size =
+      getParamWithDefaultWarning(nh,
+                                 "planner/safety/foothold_size",
+                                 params->planner.safety.foothold_size);
+
   // Planner / Start Goal Search.
 
   params->planner.start_goal_search.start_radius =
@@ -82,6 +109,54 @@ ParamsPtr art_planner::loadRosParameters(const ros::NodeHandle& nh) {
                                  "planner/lazy_prm_star_min_update/cleanup_when_not_planning",
                                  params->planner.lazy_prm_star_min_update.cleanup_when_not_planning);
 
+  // Planner / PRM Motion Cost.
+
+  params->planner.prm_motion_cost.max_sample_time =
+      getParamWithDefaultWarning(nh,
+                                 "planner/prm_motion_cost/max_sample_time",
+                                 params->planner.prm_motion_cost.max_sample_time);
+
+  params->planner.prm_motion_cost.max_n_vertices =
+      getParamWithDefaultWarning(nh,
+                                 "planner/prm_motion_cost/max_n_vertices",
+                                 params->planner.prm_motion_cost.max_n_vertices);
+
+  params->planner.prm_motion_cost.max_n_edges =
+      getParamWithDefaultWarning(nh,
+                                 "planner/prm_motion_cost/max_n_edges",
+                                 params->planner.prm_motion_cost.max_n_edges);
+
+  params->planner.prm_motion_cost.recompute_density_after_n_samples =
+      getParamWithDefaultWarning(nh,
+                                 "planner/prm_motion_cost/recompute_density_after_n_samples",
+                                 params->planner.prm_motion_cost.recompute_density_after_n_samples);
+
+  params->planner.prm_motion_cost.max_query_edge_length =
+      getParamWithDefaultWarning(nh,
+                                 "planner/prm_motion_cost/max_query_edge_length",
+                                 params->planner.prm_motion_cost.max_query_edge_length);
+
+  params->planner.prm_motion_cost.risk_threshold =
+      getParamWithDefaultWarning(nh,
+                                 "planner/prm_motion_cost/risk_threshold",
+                                 params->planner.prm_motion_cost.risk_threshold);
+
+
+  // Planner / PRM Motion Cost / Cost Weights.
+
+  params->planner.prm_motion_cost.cost_weights.energy =
+      getParamWithDefaultWarning(nh,
+                                 "planner/prm_motion_cost/cost_weights/energy",
+                                 params->planner.prm_motion_cost.cost_weights.energy);
+  params->planner.prm_motion_cost.cost_weights.time =
+      getParamWithDefaultWarning(nh,
+                                 "planner/prm_motion_cost/cost_weights/time",
+                                 params->planner.prm_motion_cost.cost_weights.time);
+  params->planner.prm_motion_cost.cost_weights.risk =
+      getParamWithDefaultWarning(nh,
+                                 "planner/prm_motion_cost/cost_weights/risk",
+                                 params->planner.prm_motion_cost.cost_weights.risk);
+
   // Objectives / Custom Path Length.
 
   params->objectives.custom_path_length.use_directional_cost =
@@ -100,33 +175,6 @@ ParamsPtr art_planner::loadRosParameters(const ros::NodeHandle& nh) {
       getParamWithDefaultWarning(nh,
                                  "objectives/custom_path_length/max_ang_vel",
                                  params->objectives.custom_path_length.max_ang_vel);
-
-  // Objectives / Clearance.
-
-  params->objectives.clearance.enable =
-      getParamWithDefaultWarning(nh,
-                                 "objectives/clearance/enable",
-                                 params->objectives.clearance.enable);
-  params->objectives.clearance.weight =
-      getParamWithDefaultWarning(nh,
-                                 "objectives/clearance/weight",
-                                 params->objectives.clearance.weight);
-  params->objectives.clearance.cost_center =
-      getParamWithDefaultWarning(nh,
-                                 "objectives/clearance/cost_center",
-                                 params->objectives.clearance.cost_center);
-  params->objectives.clearance.cost_lon =
-      getParamWithDefaultWarning(nh,
-                                 "objectives/clearance/cost_lon",
-                                 params->objectives.clearance.cost_lon);
-  params->objectives.clearance.cost_lat =
-      getParamWithDefaultWarning(nh,
-                                 "objectives/clearance/cost_lat",
-                                 params->objectives.clearance.cost_lat);
-  params->objectives.clearance.cost_diag =
-      getParamWithDefaultWarning(nh,
-                                 "objectives/clearance/cost_diag",
-                                 params->objectives.clearance.cost_diag);
 
   // Sampler.
 
@@ -227,10 +275,10 @@ ParamsPtr art_planner::loadRosParameters(const ros::NodeHandle& nh) {
 
   // Path following.
 
-  params->path_following.local_guidance_mode =
+  params->path_following.maximum_lookahead =
       getParamWithDefaultWarning(nh,
-                                 "path_following/local_guidance_mode",
-                                 params->path_following.local_guidance_mode);
+                                 "path_following/maximum_lookahead",
+                                 params->path_following.maximum_lookahead);
 
   params->verbose = getParamWithDefaultWarning(nh, "verbose", false);
 

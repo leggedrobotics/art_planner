@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.0.2)
 project(art_planner)
 
 ## Compile as C++14
-# add_compile_options(-std=c++14)
+ add_compile_options(-std=c++14)
 find_package(catkin REQUIRED grid_map_core)
 
 find_package(ompl REQUIRED)
@@ -59,8 +59,9 @@ add_library(${PROJECT_NAME}
   src/validity_checker/validity_checker_feet.cpp
   src/validity_checker/height_map_box_checker.cpp
   src/objectives/path_length_objective.cpp
-  src/objectives/min_clearance_objective.cpp
+  src/objectives/motion_cost_objective.cpp
   src/planners/lazy_prm_star_min_update.cpp
+  src/planners/prm_motion_cost.cpp
 )
 
 ## Add cmake target dependencies of the library

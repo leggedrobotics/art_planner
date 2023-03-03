@@ -1,1 +1,3 @@
 *.user
+*.idea
+*__pycache__

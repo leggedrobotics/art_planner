@@ -1,9 +1,6 @@
 # ANYmal Rough Terrain Planner
 
-Sampling based path planning for ANYmal, based on 2.5D height maps.
-More detailed instructions still to come.
-
-The paper detailing this work is available on the [ETH Research Collection](https://www.research-collection.ethz.ch/bitstream/handle/20.500.11850/507668/1/2021_iros_wellhausen_planner_final_version.pdf).
+Sampling based path planning for ANYmal, based on 2.5D height maps using learned motion cost.
 
 **Author:** Lorenz Wellhausen
 
@@ -12,6 +9,19 @@ The paper detailing this work is available on the [ETH Research Collection](http
 ©2021 ETH Zurich
 
 If you use this work in an academic context, please cite:
+
+Use with motion cost (_Default_, `prm_motion_cost`) [Paper link](https://arxiv.org/abs/2303.01420):
+
+```
+@inproceedings{wellhausen2023artplanner,
+  title={ArtPlanner: Robust Legged Robot Navigation in the Field},
+  author={Wellhausen, Lorenz and Hutter, Marco},
+  booktitle={Field Robotics},
+  year={2023}
+}
+```
+
+Use without motion cost (`lazy_prm_star_min_update`) [Paper link](https://www.research-collection.ethz.ch/bitstream/handle/20.500.11850/507668/1/2021_iros_wellhausen_planner_final_version.pdf):
 
 ```
 @inproceedings{wellhausen2021rough,
@@ -32,26 +42,41 @@ If you use this work in an academic context, please cite:
 The base package has the following dependencies:
 
 - [OMPL \[v1.4.2\]](https://github.com/ompl/ompl)
+- [OpenCV](https://github.com/opencv/opencv)
 - [grid\_map\_core](git@github.com:ANYbotics/grid_map.git)
 
 You can install them from source if you want to use the planner independent of ROS.
-If you're using the ROS interface, installation is even easier and can be done through PPA.
+If you're using the ROS interface, installation is even easier and can be done through PPA (and OpenCV should be installed by default).
 We ship our own catkinized version of ODE, which has modifications in the height field collision checking.
 This means that if you build this package in a workspace with other packages which also require ODE this version might be used.
 
-`sudo apt install ros-melodic-ompl ros-melodic-grid-map-core`
+`sudo apt install ros-noetic-ompl ros-noetic-grid-map-core`
 
-**Warning:** Do NOT install the `libompl-dev` package from PPA as that one is an imcompatible version which breaks things.
+**Warning:** Do NOT install the `libompl-dev` package from PPA which is an imcompatible version and breaks things.
 
 ### art\_planner\_ros
 
 The dependencies of the ROS interface can be installed with the following command:
 
-`sudo apt install ros-melodic-actionlib ros-melodic-geometry-msgs ros-melodic-grid-map-msgs ros-melodic-grid-map-ros ros-melodic-nav-msgs ros-melodic-roscpp ros-melodic-tf2-geometry-msgs ros-melodic-tf2-ros`
+`sudo apt install ros-noetic-actionlib ros-noetic-geometry-msgs ros-noetic-grid-map-msgs ros-noetic-grid-map-ros ros-noetic-nav-msgs ros-noetic-roscpp ros-noetic-tf2-geometry-msgs ros-noetic-tf2-ros`
+
+Tested on ROS noetic.
+
+### art\_planner\_motion\_cost
+
+This package contains everything related to motion cost inference.
+This is all done in Python and Pytorch, therefore, you need to install these Python packages:
+
+`pip3 install opencv-python rospkg`
+
+Also, [install Pytorch](https://pytorch.org/) (tested with version 1.13). For example with:
+
+`pip3 install torch torchvision torchaudio`
 
 ## Usage
 
 We provide a launch file which should be everything you need, if you work with ANYmal.
+Note that the ANYmal simulation stack is only available through [ANYmal Research](https://www.anymal-research.org/) and I can therefore not provide a minimal working solution.
 
 `roslaunch art_planner_ros art_planner.launch`
 
@@ -70,10 +95,44 @@ The defaults should be fine for ANYmal C.
 
 You can use the `2D Nav Goal` in RViz to set a goal pose for the planner.
 
+### Height Map
+
+We recommend using the [elevation_mapping_cupy](https://github.com/leggedrobotics/elevation_mapping_cupy) package for height mapping.
+It's what we use as input to the planner and will provide a `traversability` layer by default, which is used to restrict steppable terrain.
+It can also output an `upper_bound` layer, which computes the maximum terrain height in unobserved map cells via ray-tracing and improves navigation in complex terrain.
+
+We know that [elevation_mapping](https://github.com/ANYbotics/elevation_mapping) also works, if you only have a CPU but will not provide `traversability` or `upper_bound`.
+
+### ROS Interface
+
+#### **Subscribers**
+
+`~elevation_map`: Expects a `grid_map_msgs::GridMap` message containing the height map used for planning
+
+The robot pose is obtained from the TF tree (see `robot/base_frame` in the config file).
+
+#### **Publishers**
+
+`~path`: Outputs a `nav_msgs::Path` message with the computed path.
+
+`~map`: Outputs the height map used for computing the published path as `grid_map_msgs::GridMap`, with additional layers created during planning (such as sampling probability and inpainted traversability).
+These are a lot of layers, which makes the published message quite heavy. Therefore, only subscribe to it, when you also really want to look at it (it's only published if there are subscribers).
+
+`~planning_time`: Publishes the time used for planning for the latest output path as `std_msgs::Float64`.
+
+#### **Action Server**
+
+`~plan_to_goal`: Custom action `art_planner_msgs::PlanToGoalAction` to contiuously plan towards a goal. Can be called with a `2D Nav Goal` in Rviz using `art_planner_ros/scripts/plan_to_goal_client.py`.
+
+#### **Service Server**
+
+`~plan`: A `nav_msgs::GetPlan` service to request a single path. The `tolerance` field is ignored in favor of the `planner/start_goal_search/goal_radius` parameter.
+
 ## TODO
 
 Although the planner is overall pretty :fire::fire::fire::100::fire::fire::fire: some things are still :poop:.
 
-### Known issues
+### Known issues (PRs welcome!)
 
 - Catkinized ODE version might be pulled in as dependency by other packages in workspace :bowling:
+- This method does not use LLMs or RL, so your friends might not think you're cool for using it :older_man:

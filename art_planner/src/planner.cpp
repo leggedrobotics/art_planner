@@ -12,8 +12,8 @@
 #include "art_planner/map/processors/probability_distribution.h"
 #include "art_planner/map/processors/sample_density.h"
 #include "art_planner/objectives/path_length_objective.h"
-#include "art_planner/objectives/min_clearance_objective.h"
 #include "art_planner/planners/lazy_prm_star_min_update.h"
+#include "art_planner/planners/prm_motion_cost.h"
 #include "art_planner/sampler.h"
 #include "art_planner/start.h"
 
@@ -30,11 +30,6 @@ ob::OptimizationObjectivePtr art_planner::getObjective(const ob::SpaceInformatio
 
   ob::OptimizationObjectivePtr length_obj(new PathLengthObjective(si, params));
   opt->addObjective(length_obj, 1.0);
-
-  if (params->objectives.clearance.enable) {
-    ob::OptimizationObjectivePtr clearance_obj(new MinClearanceObjective(si));
-    opt->addObjective(clearance_obj, params->objectives.clearance.weight);
-  }
 
   return std::dynamic_pointer_cast<ob::OptimizationObjective>(opt);
 }
@@ -104,6 +99,8 @@ Planner::Planner(const ParamsConstPtr& params)
     planner.reset(new og::LazyPRMstar(si));
   } else if (params_->planner.name == "lazy_prm_star_min_update") {
     planner.reset(new LazyPRMStarMinUpdate(si));
+  } else if (params_->planner.name == "prm_motion_cost") {
+    planner.reset(new PRMMotionCost(si));
   } else {
     throw std::runtime_error("Unknown planner requested: " + params_->planner.name);
   }
@@ -139,7 +136,9 @@ void Planner::setMap(std::unique_ptr<grid_map::GridMap>&& map) {
 
   if (!map->exists(params_->planner.elevation_layer)) {
     if (params_->verbose) {
-      std::cout << "Grid map does not have \"elevation\" layer." << std::endl;
+      std::cout << "Grid map does not have \""
+                << params_->planner.elevation_layer
+                << "\" layer." << std::endl;
     }
     return;
   }
@@ -159,7 +158,6 @@ void Planner::setMap(std::unique_ptr<grid_map::GridMap>&& map) {
   std::lock_guard<std::mutex> lock(map_mutex_);
 
   space_->setBounds(bounds);
-
   map_->setMap(std::move(map));
   checker_->updateHeightField();
 }
@@ -239,7 +237,7 @@ PlannerStatus Planner::plan(const ob::ScopedState<>& start,
   }
 
   // Reset planner and start planning.
-  ss_->clear();
+  ss_->getPlanner()->clearQuery();
   setStartAndGoal(start, goal_clipped);
 
   ob::PlannerStatus solved;
@@ -283,6 +281,10 @@ og::PathGeometric Planner::getSolutionPath(const bool& simplify) const {
       const auto obj = ss_->getOptimizationObjective();
       const auto cost_simple = path_simple.cost(obj);
       const auto cost_orig = path.cost(obj);
+      if (params_->verbose) {
+        std::cout << "cost_simple " << cost_simple << std::endl;
+        std::cout << "cost_orig " << cost_orig << std::endl;
+      }
       if (obj->isCostBetterThan(cost_orig, cost_simple)) {
         if (params_->verbose) {
           std::cout << "Original path cost is lower than simplified. Returning original." << std::endl;

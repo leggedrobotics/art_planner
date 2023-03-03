@@ -42,8 +42,6 @@ public:
 
   bool isValid(const Pose3& pose) const;
 
-  double getClearance(const Pose3& pose) const;
-
   bool hasMap() const;
 
   void updateHeightField();

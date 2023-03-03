@@ -36,8 +36,6 @@ public:
    bool hasMap() const;
 
    virtual bool isValid(const ob::State *state) const override;
-
-   virtual double clearance(const ob::State *state) const override;
 };
 
 

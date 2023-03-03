@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<launch>
+
+  <node name="motion_cost_server" pkg="art_planner_motion_cost" type="cost_query_server.py" output="screen">
+    <remap from="~map" to="/elevation_mapping/elevation_map_raw" />
+
+    <rosparam command="load" file="$(find art_planner_motion_cost)/config/config.yaml"/>
+  </node>
+
+</launch>

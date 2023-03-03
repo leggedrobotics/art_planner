@@ -39,6 +39,7 @@
   <buildtool_depend>catkin</buildtool_depend>
   <depend>actionlib</depend>
   <depend>art_planner</depend>
+  <depend>art_planner_motion_cost</depend>
   <depend>art_planner_msgs</depend>
   <depend>geometry_msgs</depend>
   <depend>grid_map_msgs</depend>

@@ -1,0 +1,29 @@
+# Define the goal and local guidance parameters
+navigation_msgs/PathLocalGuidance path
+---
+# Define the result
+---
+# Define a feedback message for local planner
+uint8 INVALID_START = 0   # Start pose is invalid
+uint8 INVALID_GOAL = 1    # Goal pose is invalid
+uint8 PLANNING = 2        # Planning to goal
+uint8 FOUND_SOLUTION = 3  # Found a solution path
+uint8 NO_SOLUTION = 4     # Failed to find a path
+uint8 NO_GOAL_TF = 5      # No TF found to transform goal pose to map frame.
+uint8 GOAL_RECEIVED = 6   # Received goal pose.
+uint8 NODE_SHUTDOWN = 7   # Node is shut down.
+uint8 NO_MAP = 8          # Map is not set.
+uint8 NO_ROBOT_TF = 9     # Could not get robot pose from TF.
+
+uint8 status
+# feedback definition for local guidance
+uint16 remaining_number_of_segments
+uint16 initial_number_of_segments
+float32 remaining_distance
+float32 initial_distance
+float32 estimated_time_left # estimated time left before end of the path [s]
+string locomotion_controller_name
+string locomotion_controller_mode
+string locomotion_controller_submode
+string local_guidance_mode
+string status_local_guidance

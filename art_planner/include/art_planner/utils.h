@@ -49,6 +49,19 @@ inline Pose3 Pose3FromXYZ(Scalar x, Scalar y, Scalar z) {
 
 
 
+inline double lateralDistance(const ob::State* from,
+                              const ob::State* to) {
+  const auto from_se3 = from->as<ob::SE3StateSpace::StateType>();
+  const auto to_se3 = to->as<ob::SE3StateSpace::StateType>();
+
+  const auto dx = to_se3->getX() - from_se3->getX();
+  const auto dy = to_se3->getY() - from_se3->getY();
+
+  return std::sqrt(dx*dx + dy*dy);
+}
+
+
+
 template <typename T>
 inline T getRollFromQuat(T w, T x, T y, T z) {
   return atan2(2*(w*x + y*z), 1-2*(x*x + y*y));
@@ -116,6 +129,10 @@ grid_map::Matrix gaussianBlurMatrix(const grid_map::Matrix &mat, int size, doubl
 
 
 grid_map::Matrix dilateAndErodeMatrix(const grid_map::Matrix& mat, int size);
+
+
+
+grid_map::Matrix erodeAndDilateMatrix(const grid_map::Matrix& mat, int size);
 
 
 

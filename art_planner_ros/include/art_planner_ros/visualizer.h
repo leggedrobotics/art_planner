@@ -1,6 +1,7 @@
 #pragma once
 
 #include <thread>
+#include <unordered_map>
 
 #include <nav_msgs/Path.h>
 #include <ompl/base/PlannerData.h>
@@ -18,7 +19,7 @@ namespace art_planner {
 class Visualizer {
 
   ros::NodeHandle nh_;
-  ros::Publisher graph_pub_;
+  std::unordered_map<std::string, ros::Publisher> graph_pub_;
   ros::Publisher collision_pub_;
   ros::Publisher path_collision_pub_;
 
@@ -31,6 +32,8 @@ class Visualizer {
   int last_num_edges{0};
   int last_num_start_goal{0};
   int last_num_path_collisions{100};
+
+  ros::Publisher& getGraphPublisher(const std::string& ns_prefix);
 
   void addVertices(const ompl::base::PlannerData& dat,
                    visualization_msgs::MarkerArray& array);
@@ -52,7 +55,8 @@ public:
   ~Visualizer();
 
   void visualizePlannerGraph(const ompl::base::PlannerData& dat,
-                             const std::string &frame_id);
+                             const std::string &frame_id,
+                             const std::string& ns_prefix = "");
 
 
   void visualizePathCollisions(const nav_msgs::Path& path);

@@ -2,13 +2,14 @@ cmake_minimum_required(VERSION 3.0.2)
 project(art_planner_ros)
 
 ## Compile as C++14
-# add_compile_options(-std=c++14)
+ add_compile_options(-std=c++14)
 
 find_package(
 catkin
 REQUIRED
   actionlib
   art_planner
+  art_planner_motion_cost
   art_planner_msgs
   geometry_msgs
   grid_map_msgs
@@ -34,6 +35,7 @@ catkin_package(
   CATKIN_DEPENDS
     actionlib
     art_planner
+    art_planner_motion_cost
     art_planner_msgs
     geometry_msgs
     grid_map_msgs

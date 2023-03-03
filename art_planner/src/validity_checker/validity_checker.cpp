@@ -43,9 +43,3 @@ bool StateValidityChecker::isValid(const ob::State *state) const {
                                                  params_->robot.torso.offset.z - params_->robot.feet.offset.z);
   return checker_body_.isValid(pose_base) && checker_feet_.isValid(state_pose);
 }
-
-
-
-double StateValidityChecker::clearance(const ob::State *state) const {
-  return checker_feet_.getClearance(Pose3FromSE3(state));
-}

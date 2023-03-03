@@ -1,14 +1,21 @@
 planner:  
-    name: "lazy_prm_star_min_update"                # Planner [rrt_star, inf_rrt_star, rrt_sharp, lazy_prm_star, lazy_prm_star_min_update]
+    name: "prm_motion_cost"                         # Planner [rrt_star, inf_rrt_star, rrt_sharp, lazy_prm_star, lazy_prm_star_min_update, prm_motion_cost]
     elevation_layer: "elevation"                  # Layer name which has elevation information.
     traversability_layer: "traversability"          # Layer name which has traversability information.
     plan_time: 0.01                                 # [s]   Planning duration.
-    n_threads: 4                                    # Number of threads for ROS spinner.
+    n_threads: 2                                    # Number of threads for ROS spinner.
     replan_freq: 1.0                                # [Hz]    Frequency of replanning.
-    traversability_thres: 0.5                       # Traversability smaller than this is considered untraversable.
+    traversability_thres: 0.15                      # Traversability smaller than this is considered untraversable.
     simplify_solution: true                         # Simplify the solution path before publishing.
     snap_goal_to_map: true                          # Get z, roll, pitch from elevation map.
     unknown_space_untraversable: true               # If set true, unknown space is assumed to be untraversable.
+    safety:
+        foothold_margin: 0.3                        # [m] Edges are eroded this much to avoid stepping close to edges.
+        foothold_margin_max_hole_size: 0.3          # [m] Maximum hole size to ignore during erosion.
+        foothold_margin_max_drop: 0.3               # [m] Maximum drop to ignore during erosion.
+        foothold_margin_max_drop_search_radius: 0.16 # [m] Erosion radius to compute drop.
+        foothold_margin_min_step: 0.3               # [m] Minimum step up to ignore during erosion.
+        foothold_size: 0.1                          # [m] Circular diameter which is considered minimal for a foothold.
     start_goal_search:
         start_radius: 0.2                           # [m] Try to find a valid start pose in this radius if selected start is invalid.
         goal_radius: 0.5                            # [m] Try to find a valid goal pose in this radius if selected pose is invalid.
@@ -17,21 +24,23 @@ planner:
         invalidate_updated_graph_components: true   # Invalidate planner graph vertices and edges which were recently observed (and therefore might have changed).
         height_change_for_update: 0.05              # [m] Cell height changes larger than this are considered updated.
         cleanup_when_not_planning: true             # Do validity check in separate thread while not planning.
-
-objectives:
+    prm_motion_cost:
+        max_sample_time: 2.0                        # Maximum time to allocate for sampling.
+        max_n_vertices: 10000                       # Stop sampling when this many vertices are in the graph.
+        max_n_edges: 50000                            # Stop sampling when this many edges are in the graph.
+        recompute_density_after_n_samples: 1000     # Recompute the vertex density after sampling this many vertices.
+        max_query_edge_length: 0.5                  # Maximum edge length to query.
+        risk_threshold: 0.5                         # Maximum risk to label edge valid.
+        cost_weights:
+            energy: 0.0
+            time: 1.0
+            risk: 5.0
+objectives:                                         # Not active with prm_motion_cost.
     custom_path_length:
         use_directional_cost: true                  # Enable different cost per direction.
         max_lon_vel: 0.5                            # [m/s]   Maximal longitudinal velocity.
         max_lat_vel: 0.1                            # [m/s]   Maximal lateral velocitiy.
         max_ang_vel: 0.5                            # [rad/s] Maximal angular velocity.
-
-    clearance:      
-        enable: false                               # Enable clearance objective.
-        weight: 10.0                                # Weight of this cost compared to path length.
-        cost_center: 5                              # Cost if center box of reachability is not in contact.
-        cost_lon: 3                                 # Cost if longitudinal box of reachability is not in contact.
-        cost_lat: 2                                 # Cost if lateral box of reachability is not in contact.
-        cost_diag: 1                                # Cost if diagional box of reachability is not in contact.
 
 sampler:        
     max_pitch_pert: 10                              # [degree]  Maximum pitch pertubation when sampling.
@@ -44,8 +53,8 @@ sampler:
 robot:      
     base_frame: "base"                              # Frame ID which is used to get robot pose.
     torso:
-        length: 1.07                                # [m] Length.
-        width: 0.55                                 # [m] Width.
+        length: 1.31                                # [m] Length.
+        width: 0.65                                 # [m] Width.
         height: 0.3                                 # [m] Height.
         offset:                                     # [m] Torso center offset relative to base_frame.
             x: 0.0
@@ -53,15 +62,15 @@ robot:
             z: 0.04
     feet:
         offset:                                     # [m] Reachability box offset relative to base_frame.
-            x: 0.362                                # Sign of value does not matter.
-            y: 0.225                                # Sign of value does not matter.
-            z: -0.525
+            x: 0.51                                # Sign of value does not matter.
+            y: 0.2                                # Sign of value does not matter.
+            z: -0.475
         reach:                                      # [m] Reachability of foot box size.
-            x: 0.4
-            y: 0.3
-            z: 0.15
+            x: 0.2
+            y: 0.2
+            z: 0.2
 
 path_following:
-    local_guidance_mode: walk                       # Path following mode for local guidance.
+    maximum_lookahead: 0.0                          # [m] How far ahead to search when trying to short-cut path. Only active when > 0.0 .
 
 verbose: true

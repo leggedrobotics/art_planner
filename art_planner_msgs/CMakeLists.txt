@@ -5,19 +5,21 @@ find_package(catkin REQUIRED COMPONENTS
   actionlib_msgs 
   genmsg
   geometry_msgs
+  navigation_msgs
 )
 
 add_action_files(
   DIRECTORY action
-  FILES PlanToGoal.action
+  FILES PlanToGoal.action PlanToGoalLocalGuidance.action
 )
 
 generate_messages(
   DEPENDENCIES
   actionlib_msgs
   geometry_msgs
+  navigation_msgs
 )
 
 catkin_package(
-  CATKIN_DEPENDS actionlib_msgs geometry_msgs
+  CATKIN_DEPENDS actionlib_msgs geometry_msgs navigation_msgs
 )

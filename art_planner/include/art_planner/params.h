@@ -26,6 +26,15 @@ struct Params {
     bool           unknown_space_untraversable{true};
 
     struct {
+      double       foothold_margin{0.0};
+      double       foothold_margin_max_hole_size{0.0};
+      double       foothold_margin_max_drop{0.0};
+      double       foothold_margin_max_drop_search_radius{0.0};
+      double       foothold_margin_min_step{0.0};
+      double       foothold_size{0.0};
+    } safety;
+
+    struct {
       double       start_radius{0.0};
       double       goal_radius{0.0};
       unsigned int n_iter{0};
@@ -37,6 +46,22 @@ struct Params {
       bool         cleanup_when_not_planning{false};
     } lazy_prm_star_min_update;
 
+    struct {
+      double max_sample_time{2.0};
+      unsigned int max_n_vertices{10000u};
+      unsigned int max_n_edges{50000u};
+      unsigned int recompute_density_after_n_samples{1000u};
+      float max_query_edge_length{0.5};
+      float risk_threshold{0.1};
+
+      struct {
+        float energy{0.0};
+        float time{1.0};
+        float risk{5.0};
+      } cost_weights;
+
+    } prm_motion_cost;
+
   } planner;
 
   struct {
@@ -47,15 +72,6 @@ struct Params {
       double       max_lat_vel{0.1};
       double       max_ang_vel{0.5};
     } custom_path_length;
-
-    struct {
-      bool         enable{false};
-      double       weight{10.0};
-      double       cost_center{5.0};
-      double       cost_lon{3.0};
-      double       cost_lat{2.0};
-      double       cost_diag{1.0};
-    } clearance;
 
   } objectives;
 
@@ -103,7 +119,7 @@ struct Params {
   } robot;
 
   struct {
-    std::string        local_guidance_mode{"walk"};
+    double             maximum_lookahead{0.0};
   } path_following;
 
   bool verbose{false};

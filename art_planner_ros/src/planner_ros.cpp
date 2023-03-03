@@ -1,7 +1,13 @@
 #include "art_planner_ros/planner_ros.h"
 
-#include <ros/spinner.h>
+#include <functional>
+
+#include <art_planner/planners/prm_motion_cost.h> // TODO: This include is kind of ugly.
+#include <art_planner/objectives/motion_cost_objective.h> // TODO: This include is kind of ugly.
+#include <art_planner_motion_cost/costQuery.h>
 #include <grid_map_ros/GridMapRosConverter.hpp>
+#include <ros/spinner.h>
+#include <std_msgs/Float64.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 #include <visualization_msgs/MarkerArray.h>
 
@@ -55,7 +61,7 @@ void PlannerRos::planContinuouslyThread() {
 
 
 
-void PlannerRos::planFromCurrentRobotPose() {
+bool PlannerRos::getCurrentRobotPose(geometry_msgs::PoseStamped* pose) const {
   // Get robot pose.
   geometry_msgs::TransformStamped pose_tf;
   try {
@@ -67,9 +73,26 @@ void PlannerRos::planFromCurrentRobotPose() {
     ROS_WARN("%s",ex.what());
     ROS_ERROR("Could not get robot pose from TF. Cannot plan!");
     publishFeedback(Feedback::NO_ROBOT_TF);
-    return;
+    return false;
   }
 
+  tf2::Stamped<tf2::Transform> tf_tf2;
+  tf2::fromMsg(pose_tf, tf_tf2);
+
+  // Get feet center pose from base.
+  tf2::Transform offset;
+  offset.setIdentity();
+  offset.setOrigin(tf2::Vector3(0, 0, params_->robot.feet.offset.z));
+
+  tf_tf2 *= offset;
+
+  tf2::toMsg(tf_tf2, *pose);
+  return true;
+}
+
+
+
+void PlannerRos::planFromCurrentRobotPose() {
   // Convert goal pose to map frame (map might drift w.r.t goal).
   geometry_msgs::PoseStamped pose_goal_transformed;
   try {
@@ -87,25 +110,12 @@ void PlannerRos::planFromCurrentRobotPose() {
     return;
   }
 
-  tf2::Stamped<tf2::Transform> tf_tf2;
-  tf2::fromMsg(pose_tf, tf_tf2);
-
-  // Get feet center pose from base.
-  tf2::Transform offset;
-  offset.setIdentity();
-  offset.setOrigin(tf2::Vector3(0, 0, params_->robot.feet.offset.z));
-
-  tf_tf2 *= offset;
-
-  geometry_msgs::PoseStamped pose_robot;
-  tf2::toMsg(tf_tf2, pose_robot);
-
-  ob::ScopedState<> start = converter_.poseRosToOmpl(pose_robot);
   ob::ScopedState<> goal = converter_.poseRosToOmpl(pose_goal_transformed);
 
   publishFeedback(Feedback::PLANNING);
-  const auto result = updateMapAndPlan(start, goal);
-  visualizePlannerGraph();
+  const auto result = updateMapAndPlanFromCurrentRobotPose(goal);
+  visualizePlannerGraph("", false);
+  visualizePlannerGraph("invalid/", true);
 
   switch (result) {
     case PlannerStatus::INVALID_GOAL: publishFeedback(Feedback::INVALID_GOAL); break;
@@ -121,7 +131,7 @@ void PlannerRos::planFromCurrentRobotPose() {
     auto plan_ros = converter_.pathOmplToRos(getSolutionPath(params_->planner.simplify_solution));
     plan_ros.header.frame_id = planning_map_info_.header.frame_id;
     plan_ros.header.stamp = ros::Time::now();
-    publishPath(plan_ros, true);
+    publishPath(plan_ros);
   }
 }
 
@@ -201,7 +211,7 @@ bool PlannerRos::getPlanService(nav_msgs::GetPlanRequest& req,
     res.plan = converter_.pathOmplToRos(getSolutionPath(params_->planner.simplify_solution));
     res.plan.header.frame_id = planning_map_info_.header.frame_id;
     res.plan.header.stamp = ros::Time::now();
-    publishPath(res.plan, false);
+    publishPath(res.plan);
     return true;
   } else {
     return false;
@@ -210,8 +220,7 @@ bool PlannerRos::getPlanService(nav_msgs::GetPlanRequest& req,
 
 
 
-void PlannerRos::publishPath(nav_msgs::Path path,
-                             const bool& connect_callback) {
+void PlannerRos::publishPath(nav_msgs::Path path) {
   // Publish regular ROS message.
   path_pub_.publish(path);
   visualizer_.visualizePathCollisions(path);
@@ -229,11 +238,11 @@ PlannerRos::~PlannerRos() {
 
 
 
-void PlannerRos::visualizePlannerGraph() {
+void PlannerRos::visualizePlannerGraph(const std::string& ns_prefix, bool get_invalid) {
   ob::PlannerData dat(ss_->getSpaceInformation());
-  ss_->getPlannerData(dat);
+  ss_->getPlanner()->as<PRMMotionCost>()->getPlannerData(dat, get_invalid);
 
-  visualizer_.visualizePlannerGraph(dat, planning_map_info_.header.frame_id);
+  visualizer_.visualizePlannerGraph(dat, planning_map_info_.header.frame_id, ns_prefix);
 }
 
 
@@ -253,9 +262,60 @@ PlannerRos::PlannerRos(const ros::NodeHandle& nh)
   plan_act_srv_->registerPreemptCallback(std::bind(&PlannerRos::cancelGoalCallback,
                                                 this));
   plan_act_srv_->start();
-  plan_srv_ = nh_.advertiseService("plan", &PlannerRos::getPlanService, this);
   path_pub_ = nh_.advertise<nav_msgs::Path>("path", 1, true);
   map_pub_ = nh_.advertise<grid_map_msgs::GridMap>("map", 1, true);
+  timer_pub_ = nh_.advertise<std_msgs::Float64>("planning_time", 1);
+  plan_srv_ = nh_.advertiseService("plan", &PlannerRos::getPlanService, this);
+
+  // Cost service handling.
+  if (params_->planner.name == "prm_motion_cost") {
+    // Wait for services.
+    cost_srv_client_ = nh_.serviceClient<art_planner_motion_cost::costQuery>("cost_query");
+    ROS_INFO_STREAM("Waiting for cost service...");
+    cost_srv_client_.waitForExistence();
+    ROS_INFO_STREAM("Service is up.");
+    cost_no_update_srv_client_ = nh_.serviceClient<art_planner_motion_cost::costQuery>("cost_query_no_update");
+    ROS_INFO_STREAM("Waiting for cost no update service...");
+    cost_no_update_srv_client_.waitForExistence();
+    ROS_INFO_STREAM("Service is up.");
+
+    // Pass service call to planner.
+    auto cost_func = [this](const MotionCostObjective::EdgeMatrix& edge_matrix,
+                            MotionCostObjective::EdgeMatrix* edge_costs,
+                            ros::ServiceClient& client) {
+      art_planner_motion_cost::costQuery srv;
+      srv.request.header = planning_map_info_.header;
+      // TODO: Find out if we can do this without data copying.
+      srv.request.query_poses.assign(edge_matrix.data(),
+                                     edge_matrix.data()+edge_matrix.cols()*edge_matrix.rows());
+
+      // Query service.
+      const auto success = client.call(srv);
+
+      // No need to copy data if service failed.
+      if (!success) {
+        return false;
+      }
+
+      // Write result to cost matrix.
+      for (size_t i = 0; i < edge_costs->rows(); ++i) {
+        (*edge_costs)(i, 0) = srv.response.cost_power[i];
+        (*edge_costs)(i, 1) = srv.response.cost_time[i];
+        (*edge_costs)(i, 2) = srv.response.cost_risk[i];
+      }
+
+      return success;
+    };
+    ss_->getPlanner()->as<PRMMotionCost>()->setMaintainer(
+          std::unique_ptr<PRMMotionCostMaintainer>(
+              new PRMMotionCostMaintainer(map_, params_, std::make_unique<MotionCostObjective::MotionCostFunc>(
+                                                              std::bind(cost_func, std::placeholders::_1, std::placeholders::_2, cost_srv_client_)))));
+    ss_->setOptimizationObjective(
+              std::make_shared<MotionCostObjective>(ss_->getSpaceInformation(),
+                                                    params_,
+                                                    std::make_unique<MotionCostObjective::MotionCostFunc>(
+                                                         std::bind(cost_func, std::placeholders::_1, std::placeholders::_2, cost_no_update_srv_client_))));
+  }
 }
 
 
@@ -284,9 +344,46 @@ void PlannerRos::publishMap() const {
 
 
 
+void PlannerRos::publishTiming(const double& timing) const {
+  std_msgs::Float64 msg;
+  msg.data = timing;
+  timer_pub_.publish(msg);
+}
+
+
+
 PlannerStatus PlannerRos::updateMapAndPlan(const ob::ScopedState<>& start,
                                            const ob::ScopedState<>& goal) {
   updateMap();
+
+  ss_->clear();
+
+  const auto result = plan(start, goal);
+
+  publishMap();
+
+  return result;
+}
+
+
+
+PlannerStatus PlannerRos::updateMapAndPlanFromCurrentRobotPose(const ob::ScopedState<>& goal) {
+  updateMap();
+
+  ss_->clear();
+  ss_->setup();
+  if (params_->planner.name == "prm_motion_cost") {
+    auto planner = ss_->getPlanner()->as<PRMMotionCost>();
+    planner->sampleGraph();
+  }
+
+  // Get robot pose.
+  geometry_msgs::PoseStamped pose_robot;
+  if (!getCurrentRobotPose(&pose_robot)) {
+    return PlannerStatus::UNKNOWN;
+  }
+
+  ob::ScopedState<> start = converter_.poseRosToOmpl(pose_robot);
 
   const auto result = plan(start, goal);
 

@@ -1,0 +1,6 @@
+std_msgs/Header header
+float32[]       query_poses
+---
+float32[]       cost_power
+float32[]       cost_time
+float32[]       cost_risk

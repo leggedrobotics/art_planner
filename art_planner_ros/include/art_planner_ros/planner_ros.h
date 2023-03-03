@@ -34,9 +34,12 @@ class PlannerRos : protected Planner {
 
   ros::Subscriber map_sub_;
   ros::ServiceServer plan_srv_;
+  ros::ServiceClient cost_srv_client_;
+  ros::ServiceClient cost_no_update_srv_client_;
   std::unique_ptr<PlanningActionServer> plan_act_srv_;
   ros::Publisher path_pub_;
   ros::Publisher map_pub_;
+  ros::Publisher timer_pub_;
 
   tf2_ros::Buffer tf_buffer_;
   tf2_ros::TransformListener tf_listener_{tf_buffer_};
@@ -71,7 +74,7 @@ class PlannerRos : protected Planner {
   nav_msgs::Path getAndPublishPathFromTo(const geometry_msgs::PoseStamped& pose_start,
                                          const geometry_msgs::PoseStamped& pose_goal);
 
-  geometry_msgs::PoseStamped getRobotPose() const;
+  bool getCurrentRobotPose(geometry_msgs::PoseStamped *pose) const;
 
   bool transformRosPoseToMapFrame(const geometry_msgs::PoseStamped& in,
                                   geometry_msgs::PoseStamped& out) const;
@@ -93,16 +96,20 @@ class PlannerRos : protected Planner {
                 const ob::ScopedState<>& goal,
                 nav_msgs::Path &path_out);
 
-  virtual void publishPath(nav_msgs::Path path, const bool &connect_callback);
+  virtual void publishPath(nav_msgs::Path path);
 
-  void visualizePlannerGraph();
+  void visualizePlannerGraph(const std::string& ns_prefix="", bool get_invalid=false);
 
   void updateMap();
 
   void publishMap() const;
 
+  void publishTiming(const double& timing) const;
+
   PlannerStatus updateMapAndPlan(const ob::ScopedState<>& start,
                                  const ob::ScopedState<>& goal);
+
+  PlannerStatus updateMapAndPlanFromCurrentRobotPose(const ob::ScopedState<>& goal);
 
 public:
 
