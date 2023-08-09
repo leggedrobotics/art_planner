@@ -15,6 +15,17 @@ Restructured and maintained by Lorenz Wellhausen.
 
 ## How to use
 
+### Cloning
+
+Before cloning this repo, make sure that [Git LFS](https://git-lfs.com/) is installed:
+
+```
+sudo apt install git-lfs
+git lfs install
+```
+
+Otherwise, the default neural network weights will not be downloaded while cloning.
+
 ### Setup
 
 1. `catkin build art_planner_motion_cost`

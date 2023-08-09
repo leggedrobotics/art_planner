@@ -37,6 +37,15 @@ Use without motion cost (`lazy_prm_star_min_update`) [Paper link](https://www.re
 
 ## Dependencies
 
+### Cloning
+
+Before cloning this repo, make sure that [Git LFS](https://git-lfs.com/) is installed:
+
+```
+sudo apt install git-lfs
+git lfs install
+```
+
 ### art_planner
 
 The base package has the following dependencies:
