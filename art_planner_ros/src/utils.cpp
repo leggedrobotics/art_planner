@@ -178,6 +178,10 @@ ParamsPtr art_planner::loadRosParameters(const ros::NodeHandle& nh) {
 
   // Sampler.
 
+  params->sampler.align_torso_with_terrain =
+      getParamWithDefaultWarning(nh,
+                                 "sampler/align_torso_with_terrain",
+                                 params->sampler.align_torso_with_terrain);
   params->sampler.max_pitch_pert =
       getParamWithDefaultWarning(nh,
                                  "sampler/max_pitch_pert",
@@ -242,6 +246,13 @@ ParamsPtr art_planner::loadRosParameters(const ros::NodeHandle& nh) {
       getParamWithDefaultWarning(nh,
                                  "robot/torso/offset/z",
                                  params->robot.torso.offset.z);
+
+  // Robot / Feet.
+
+  params->robot.feet.plane_symmetries =
+      getParamWithDefaultWarning(nh,
+                                 "robot/feet/plane_symmetries",
+                                 params->robot.feet.plane_symmetries);
 
   // Robot / Feet / Offset.
 

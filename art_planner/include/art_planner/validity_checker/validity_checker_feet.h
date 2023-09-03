@@ -29,6 +29,7 @@ class ValidityCheckerFeet {
 
   float box_length_;
   float box_width_;
+  std::vector<Pose3> box_centers_;
 
   bool boxIsValidAtPose(const Pose3& pose) const;
 

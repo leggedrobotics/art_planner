@@ -98,7 +98,12 @@ void SE3FromSE2Sampler::sampleUniform(ob::State* state) {
   state_pos_.get()->values[2] = map_->getHeightAtIndex(ind);
 
   // Apply small random perturbation in normal direction.
-  const Eigen::Vector3d normal_w = map_->getNormal(ind);
+  Eigen::Vector3d normal_w;
+  if (params_->sampler.align_torso_with_terrain) {
+    normal_w = map_->getNormal(ind);
+  } else {
+    normal_w = Eigen::Vector3d::UnitZ();
+  }
 
   const auto std = map_->getPlaneFitStdDev(ind);
 

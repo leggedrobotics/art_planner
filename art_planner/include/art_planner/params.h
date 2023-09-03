@@ -1,8 +1,9 @@
 #pragma once
 
-#include <string>
 #include <cmath>
 #include <memory>
+#include <string>
+#include <vector>
 
 
 
@@ -76,6 +77,7 @@ struct Params {
   } objectives;
 
   struct {
+    bool           align_torso_with_terrain{true};
     double         max_pitch_pert{10.0 / 180*M_PI};
     double         max_roll_pert{3.33 / 180*M_PI};
     bool           sample_from_distribution{true};
@@ -101,6 +103,9 @@ struct Params {
     } torso;
 
     struct {
+
+      std::vector<std::string> plane_symmetries{"sagittal",
+                                                "coronal"};
 
       struct {
         double         x{0.362};

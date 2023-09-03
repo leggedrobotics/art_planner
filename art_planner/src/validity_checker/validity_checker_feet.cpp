@@ -14,6 +14,31 @@ ValidityCheckerFeet::ValidityCheckerFeet(const ParamsConstPtr& params) : params_
   box_length_ = params_->robot.feet.reach.x;
   box_width_ = params_->robot.feet.reach.y;
 
+  // Add main box, specified in robot/feet/offset.
+  box_centers_.push_back(Pose3FromXYZ(params_->robot.feet.offset.x,
+                                      params_->robot.feet.offset.y,
+                                      0.0f));
+
+  // Apply plane symmetries.
+  for (const auto& plane: params_->robot.feet.plane_symmetries) {
+    size_t n_boxes = box_centers_.size();
+    if (plane == "sagittal") {
+      // Need to iterate like this because we alter vector size during loop.
+      for (size_t i = 0; i < n_boxes; ++i) {
+        box_centers_.push_back(box_centers_[i]);
+        box_centers_.back().translation().y() *= -1;
+      }
+    } else if (plane == "coronal") {
+      // Need to iterate like this because we alter vector size during loop.
+      for (size_t i = 0; i < n_boxes; ++i) {
+        box_centers_.push_back(box_centers_[i]);
+        box_centers_.back().translation().x() *= -1;
+      }
+    } else {
+      std::cout << "Unknown plane symmetry requested: " << plane << std::endl;
+    }
+  }
+
   checker_.reset(new HeightMapBoxChecker(box_length_, box_width_, params_->robot.feet.reach.z));
 }
 
@@ -61,11 +86,11 @@ bool ValidityCheckerFeet::boxesAreValidAtPoses(const std::vector<Pose3> &poses) 
 
 
 bool ValidityCheckerFeet::isValid(const Pose3& pose) const {
-  std::vector<Pose3> foot_poses({
-                     pose*Pose3FromXYZ( params_->robot.feet.offset.x,  params_->robot.feet.offset.y, 0.0f),
-                     pose*Pose3FromXYZ( params_->robot.feet.offset.x, -params_->robot.feet.offset.y, 0.0f),
-                     pose*Pose3FromXYZ(-params_->robot.feet.offset.x,  params_->robot.feet.offset.y, 0.0f),
-                     pose*Pose3FromXYZ(-params_->robot.feet.offset.x, -params_->robot.feet.offset.y, 0.0f)});
+  std::vector<Pose3> foot_poses;
+  foot_poses.reserve(box_centers_.size());
+  for (size_t i = 0; i < box_centers_.size(); ++i) {
+    foot_poses.push_back(pose * box_centers_[i]);
+  }
   return boxesAreValidAtPoses(foot_poses);
 }
 
